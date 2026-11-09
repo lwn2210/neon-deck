@@ -1,0 +1,1643 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Neon Deck — Pocket Balatro Roguelike</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%230b0d19'/%3E%3Ctext x='16' y='22' font-size='20' text-anchor='middle' fill='%23ff2bd6'%3E%E2%99%A0%3C/text%3E%3C/svg%3E">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #070913;
+  --surface: #0f1326;
+  --surface-border: #1e264a;
+  --cyan: #00f0ff;
+  --pink: #ff2bd6;
+  --gold: #ffe600;
+  --green: #00ff88;
+  --red: #ff3366;
+  --purple: #9d4edd;
+  --chip-blue: #00b4d8;
+  --mult-red: #ff3864;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--bg);
+  background-image: 
+    radial-gradient(circle at 50% 10%, rgba(157, 78, 221, 0.15) 0%, transparent 60%),
+    linear-gradient(rgba(0, 240, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 240, 255, 0.03) 1px, transparent 1px);
+  background-size: 100% 100%, 32px 32px, 32px 32px;
+  color: #fff;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  overflow-x: hidden;
+  padding-bottom: 24px;
+}
+
+/* Header & Top Nav */
+.header {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0, 240, 255, 0.15);
+  background: rgba(11, 13, 25, 0.85);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.back-link {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--cyan);
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+  text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+}
+.back-link:hover {
+  color: var(--pink);
+  transform: translateX(-2px);
+}
+
+.title-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 11px;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.title-badge .joker-icon {
+  color: var(--pink);
+  font-size: 14px;
+  animation: pulse 2s infinite ease-in-out;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.btn-icon {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  color: #8fa0c0;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-icon:hover {
+  border-color: var(--cyan);
+  color: #fff;
+}
+
+/* Main Container */
+.main-wrapper {
+  width: 100%;
+  max-width: 860px;
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Blind & Progress Board */
+.blind-card {
+  background: linear-gradient(135deg, rgba(20, 24, 45, 0.95), rgba(12, 15, 30, 0.95));
+  border: 2px solid var(--surface-border);
+  border-radius: 14px;
+  padding: 14px 18px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+  position: relative;
+  overflow: hidden;
+}
+.blind-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 3px;
+  background: linear-gradient(90deg, var(--cyan), var(--pink), var(--gold));
+}
+
+.blind-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.ante-badge {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--gold);
+  letter-spacing: 1px;
+}
+.blind-title {
+  font-size: 20px;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.5px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.blind-desc {
+  font-size: 11px;
+  color: #8fa0c0;
+}
+
+.score-hud {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  min-width: 160px;
+}
+.score-target {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #8fa0c0;
+}
+.score-target span {
+  color: var(--cyan);
+}
+.score-current {
+  font-size: 26px;
+  font-weight: 900;
+  color: #fff;
+  text-shadow: 0 0 16px rgba(0, 240, 255, 0.5);
+}
+.progress-bar-wrap {
+  width: 100%;
+  height: 8px;
+  background: #141729;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.progress-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: linear-gradient(90deg, var(--cyan), var(--green));
+  transition: width 0.4s ease-out;
+  box-shadow: 0 0 10px var(--cyan);
+}
+
+/* Joker Inventory Slots */
+.jokers-bar {
+  background: rgba(15, 19, 38, 0.7);
+  border: 1px dashed var(--surface-border);
+  border-radius: 12px;
+  padding: 8px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.jokers-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #8fa0c0;
+}
+.joker-slots-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+.joker-slot {
+  height: 64px;
+  background: rgba(8, 10, 20, 0.6);
+  border: 1px solid #1a213e;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+  text-align: center;
+}
+.joker-slot.active {
+  background: linear-gradient(135deg, rgba(157, 78, 221, 0.25), rgba(20, 24, 45, 0.8));
+  border: 1px solid var(--purple);
+  box-shadow: 0 0 12px rgba(157, 78, 221, 0.3);
+}
+.joker-slot.active:hover {
+  transform: translateY(-2px);
+  border-color: var(--pink);
+}
+.joker-slot.triggering {
+  animation: jokerGlow 0.4s ease-out;
+}
+.joker-slot .j-icon {
+  font-size: 20px;
+}
+.joker-slot .j-name {
+  font-size: 8px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+}
+.joker-slot .j-desc {
+  font-size: 7px;
+  color: var(--gold);
+}
+.joker-slot.empty {
+  color: #3b4568;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Play Field & Hand Scoring Preview */
+.playfield {
+  background: radial-gradient(circle at 50% 50%, rgba(0, 180, 216, 0.08) 0%, rgba(11, 13, 25, 0.95) 80%);
+  border: 2px solid var(--surface-border);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 280px;
+  justify-content: space-between;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+  position: relative;
+}
+
+/* Scoring Display Board */
+.scoring-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  background: rgba(5, 7, 16, 0.7);
+  border: 1px solid #1a2240;
+  border-radius: 12px;
+  padding: 10px 16px;
+}
+.hand-name {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--gold);
+  letter-spacing: 1px;
+  min-height: 18px;
+  text-shadow: 0 0 10px rgba(255, 230, 0, 0.5);
+}
+.calculation-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+}
+.calc-chips {
+  background: rgba(0, 180, 216, 0.2);
+  border: 1px solid var(--chip-blue);
+  color: var(--cyan);
+  padding: 6px 12px;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(0, 180, 216, 0.3);
+  transition: all 0.2s;
+}
+.calc-chips.bump {
+  transform: scale(1.15);
+  background: rgba(0, 180, 216, 0.5);
+}
+.calc-x {
+  color: #8fa0c0;
+  font-size: 11px;
+}
+.calc-mult {
+  background: rgba(255, 56, 100, 0.2);
+  border: 1px solid var(--mult-red);
+  color: var(--pink);
+  padding: 6px 12px;
+  border-radius: 6px;
+  box-shadow: 0 0 10px rgba(255, 56, 100, 0.3);
+  transition: all 0.2s;
+}
+.calc-mult.bump {
+  transform: scale(1.15);
+  background: rgba(255, 56, 100, 0.5);
+}
+.calc-equals {
+  color: #8fa0c0;
+}
+.calc-total {
+  color: #fff;
+  font-size: 16px;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.6);
+}
+
+/* Card Fan / Hand Area */
+.cards-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 6px;
+  padding: 10px 0;
+  min-height: 140px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.cards-container::-webkit-scrollbar { display: none; }
+
+.playing-card {
+  width: 68px;
+  height: 98px;
+  flex-shrink: 0;
+  background: #ffffff;
+  border-radius: 8px;
+  color: #111;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.18, 0.89, 0.32, 1.28), box-shadow 0.2s, border 0.2s;
+  position: relative;
+  border: 2px solid #ddd;
+}
+.playing-card:hover {
+  transform: translateY(-8px);
+}
+.playing-card.selected {
+  transform: translateY(-22px);
+  border-color: var(--cyan);
+  box-shadow: 0 0 18px var(--cyan), 0 8px 20px rgba(0,0,0,0.7);
+}
+.playing-card.scoring {
+  transform: translateY(-30px) scale(1.08);
+  border-color: var(--gold);
+  box-shadow: 0 0 24px var(--gold);
+}
+
+.card-top {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+}
+.card-val {
+  font-size: 15px;
+  font-weight: 900;
+}
+.card-suit-sm {
+  font-size: 11px;
+}
+.card-center {
+  font-size: 32px;
+  align-self: center;
+  line-height: 1;
+}
+.card-bot {
+  transform: rotate(180deg);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1;
+}
+
+/* Suit Colors on Card */
+.suit-S { color: #111; }
+.suit-C { color: #15803d; }
+.suit-H { color: #dc2626; }
+.suit-D { color: #d97706; }
+
+/* Action Buttons & Counters */
+.controls-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stats-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.stat-pill {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.stat-pill.hands { color: var(--cyan); }
+.stat-pill.discards { color: var(--red); }
+.stat-pill.cash { color: var(--gold); }
+
+.button-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s;
+  letter-spacing: 0.5px;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: grayscale(0.8);
+}
+.btn-play {
+  background: linear-gradient(135deg, #00ff88, #00b4d8);
+  color: #051410;
+  font-weight: 900;
+  box-shadow: 0 0 16px rgba(0, 255, 136, 0.4);
+}
+.btn-play:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 24px rgba(0, 255, 136, 0.7);
+}
+.btn-discard {
+  background: linear-gradient(135deg, #ff3366, #9d4edd);
+  color: #fff;
+  box-shadow: 0 0 14px rgba(255, 51, 102, 0.3);
+}
+.btn-discard:not(:disabled):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(255, 51, 102, 0.6);
+}
+.btn-sort {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  color: #8fa0c0;
+  font-size: 8px;
+  padding: 8px 10px;
+}
+.btn-sort:hover {
+  color: #fff;
+  border-color: var(--cyan);
+}
+
+/* Modals & Overlays */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 16, 0.88);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+}
+.overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.modal-card {
+  background: linear-gradient(135deg, #101428, #090c1a);
+  border: 2px solid var(--surface-border);
+  border-radius: 16px;
+  width: 100%;
+  max-width: 580px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  box-shadow: 0 0 40px rgba(0, 240, 255, 0.2);
+  transform: scale(0.95);
+  transition: transform 0.3s;
+}
+.overlay.visible .modal-card {
+  transform: scale(1);
+}
+
+.modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #1a2240;
+  padding-bottom: 12px;
+}
+.modal-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 13px;
+  color: var(--gold);
+}
+
+/* Shop Items Grid */
+.shop-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+}
+.shop-item {
+  background: rgba(18, 24, 48, 0.8);
+  border: 1px solid #24305e;
+  border-radius: 10px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  transition: all 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+.shop-item:hover {
+  border-color: var(--purple);
+  transform: translateY(-2px);
+}
+.shop-item .item-icon {
+  font-size: 28px;
+}
+.shop-item .item-name {
+  font-size: 11px;
+  font-weight: 700;
+  color: #fff;
+}
+.shop-item .item-desc {
+  font-size: 9px;
+  color: #8fa0c0;
+  line-height: 1.3;
+  flex-grow: 1;
+}
+.shop-item .item-price {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  color: var(--gold);
+  background: rgba(255, 230, 0, 0.1);
+  padding: 4px 8px;
+  border-radius: 4px;
+  width: 100%;
+}
+
+.shop-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 10px;
+  border-top: 1px solid #1a2240;
+}
+
+/* Share & Result Styles */
+.result-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+.result-box {
+  background: #090c1a;
+  border: 1px solid #1a2240;
+  border-radius: 8px;
+  padding: 10px;
+  text-align: center;
+}
+.result-box .label {
+  font-size: 10px;
+  color: #8fa0c0;
+}
+.result-box .val {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: var(--cyan);
+  margin-top: 4px;
+}
+
+.share-btn {
+  background: #25d366;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 9px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+.share-btn:hover {
+  background: #1ebc59;
+  transform: translateY(-2px);
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+}
+
+@keyframes jokerGlow {
+  0% { transform: scale(1); box-shadow: 0 0 10px var(--purple); }
+  50% { transform: scale(1.2); box-shadow: 0 0 25px var(--pink); }
+  100% { transform: scale(1); box-shadow: 0 0 12px rgba(157, 78, 221, 0.3); }
+}
+
+@media (max-width: 600px) {
+  .playing-card {
+    width: 58px;
+    height: 84px;
+    padding: 4px;
+  }
+  .card-val { font-size: 13px; }
+  .card-center { font-size: 26px; }
+  .score-current { font-size: 20px; }
+  .blind-title { font-size: 16px; }
+  .btn { font-size: 8px; padding: 8px 10px; }
+}
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a class="back-link" href="../index.html">← MINI ARCADE</a>
+  <div class="title-badge">
+    <span class="joker-icon">🃏</span>
+    <span>NEON DECK</span>
+  </div>
+  <div class="top-actions">
+    <button class="btn-icon" id="soundBtn" title="Toggle Sound">🔊</button>
+  </div>
+</header>
+
+<main class="main-wrapper">
+  <!-- Blind Target & Score Board -->
+  <div class="blind-card">
+    <div class="blind-info">
+      <div class="ante-badge" id="anteBadge">ANTE 1/8 · SMALL BLIND</div>
+      <div class="blind-title" id="blindTitle">🔵 SMALL BLIND</div>
+      <div class="blind-desc" id="blindDesc">Kumpulkan skor chips × mult untuk lolos ronde</div>
+    </div>
+    <div class="score-hud">
+      <div class="score-target">TARGET: <span id="targetScore">300</span></div>
+      <div class="score-current" id="currentScore">0</div>
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progressFill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Equipped Jokers (Max 5) -->
+  <div class="jokers-bar">
+    <div class="jokers-header">
+      <span>JOKER INVENTORY (<span id="jokerCount">0</span>/5)</span>
+      <span style="color:var(--purple)">KLIK JOKER UNTUK JUAL</span>
+    </div>
+    <div class="joker-slots-grid" id="jokerSlots">
+      <div class="joker-slot empty">EMPTY</div>
+      <div class="joker-slot empty">EMPTY</div>
+      <div class="joker-slot empty">EMPTY</div>
+      <div class="joker-slot empty">EMPTY</div>
+      <div class="joker-slot empty">EMPTY</div>
+    </div>
+  </div>
+
+  <!-- Playfield: Live Hand Preview & Cards -->
+  <div class="playfield">
+    <!-- Hand Scoring Tally Box -->
+    <div class="scoring-board">
+      <div class="hand-name" id="handName">PILIH HINGGA 5 KARTU</div>
+      <div class="calculation-row">
+        <div class="calc-chips" id="calcChips">0 CHIPS</div>
+        <div class="calc-x">×</div>
+        <div class="calc-mult" id="calcMult">1 MULT</div>
+        <div class="calc-equals">=</div>
+        <div class="calc-total" id="calcTotal">0 PTS</div>
+      </div>
+    </div>
+
+    <!-- Hand Cards Carousel/Row -->
+    <div class="cards-container" id="cardsContainer">
+      <!-- Generated Cards Here -->
+    </div>
+
+    <!-- Bottom Controls & Counters -->
+    <div class="controls-bar">
+      <div class="stats-badges">
+        <div class="stat-pill hands">✋ <span id="handsLeft">4</span></div>
+        <div class="stat-pill discards">🗑 <span id="discardsLeft">3</span></div>
+        <div class="stat-pill cash">💰 $<span id="cashVal">10</span></div>
+      </div>
+
+      <div class="button-group">
+        <button class="btn btn-sort" id="sortRankBtn">RANK ↕</button>
+        <button class="btn btn-sort" id="sortSuitBtn">SUIT ♠</button>
+        <button class="btn btn-discard" id="discardBtn">DISCARD</button>
+        <button class="btn btn-play" id="playBtn">PLAY HAND (0)</button>
+      </div>
+    </div>
+  </div>
+</main>
+
+<!-- SHOP MODAL -->
+<div class="overlay" id="shopModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title">🏪 NEON CASINO SHOP</div>
+      <div class="stat-pill cash">💰 $<span id="shopCash">0</span></div>
+    </div>
+    <div style="font-size:11px; color:#8fa0c0;">Beli Jokers atau Hand Level Up untuk memperkuat dek Anda:</div>
+    <div class="shop-grid" id="shopGrid">
+      <!-- Shop cards dynamically injected -->
+    </div>
+    <div class="shop-footer">
+      <button class="btn btn-sort" id="rerollBtn">🎲 REROLL ($5)</button>
+      <button class="btn btn-play" id="nextBlindBtn">NEXT BLIND ▶</button>
+    </div>
+  </div>
+</div>
+
+<!-- GAME OVER / WIN MODAL -->
+<div class="overlay" id="endModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <div class="modal-title" id="endTitle">💀 GAME OVER</div>
+    </div>
+    <p id="endDesc" style="font-size:12px; color:#8fa0c0; line-height: 1.5;"></p>
+    <div class="result-stats">
+      <div class="result-box">
+        <div class="label">ANTE TERTINGGI</div>
+        <div class="val" id="resAnte">ANTE 1</div>
+      </div>
+      <div class="result-box">
+        <div class="label">HIGHEST HAND</div>
+        <div class="val" id="resBestHand">0 PTS</div>
+      </div>
+      <div class="result-box">
+        <div class="label">TOTAL SKOR</div>
+        <div class="val" id="resScore">0</div>
+      </div>
+      <div class="result-box">
+        <div class="label">BEST RECORD</div>
+        <div class="val" id="resRecord">0</div>
+      </div>
+    </div>
+    <button class="share-btn" id="shareBtn">📤 PAMER REKOR DI WHATSAPP</button>
+    <button class="btn btn-play" id="restartBtn" style="width:100%; justify-content:center;">MAIN LAGI 🔄</button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================================
+   AUDIO SYNTHESIZER (Web Audio API - Zero Asset Dependency)
+   ========================================================================= */
+const AudioEngine = {
+  ctx: null,
+  enabled: true,
+
+  init() {
+    if (this.ctx) return;
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) this.ctx = new AudioCtx();
+  },
+
+  playTone(freq, type, duration, gainVal = 0.1, pitchEnd = null) {
+    if (!this.enabled) return;
+    this.init();
+    if (!this.ctx) return;
+    if (this.ctx.state === 'suspended') this.ctx.resume();
+
+    try {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+      if (pitchEnd !== null) {
+        osc.frequency.exponentialRampToValueAtTime(Math.max(10, pitchEnd), this.ctx.currentTime + duration);
+      }
+
+      gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start();
+      osc.stop(this.ctx.currentTime + duration);
+    } catch(e) {}
+  },
+
+  deal() { this.playTone(340, 'sine', 0.08, 0.06, 600); },
+  select() { this.playTone(520, 'triangle', 0.06, 0.07, 780); },
+  unselect() { this.playTone(400, 'triangle', 0.05, 0.05, 300); },
+  discard() { this.playTone(220, 'sawtooth', 0.12, 0.08, 80); },
+  tick(i = 0) { this.playTone(300 + i * 80, 'sine', 0.1, 0.09); },
+  multBump() { this.playTone(180, 'square', 0.16, 0.12, 60); },
+  cash() {
+    this.playTone(987, 'sine', 0.1, 0.08);
+    setTimeout(() => this.playTone(1318, 'sine', 0.2, 0.09), 80);
+  },
+  winRound() {
+    [523, 659, 783, 1046].forEach((f, idx) => {
+      setTimeout(() => this.playTone(f, 'triangle', 0.2, 0.1), idx * 80);
+    });
+  },
+  gameOver() {
+    [320, 280, 220, 140].forEach((f, idx) => {
+      setTimeout(() => this.playTone(f, 'sawtooth', 0.25, 0.12), idx * 100);
+    });
+  }
+};
+
+/* =========================================================================
+   DATABASE: POKER HANDS & JOKERS CATALOG
+   ========================================================================= */
+const SUITS = [
+  { id: 'S', symbol: '♠', name: 'Spades', colorClass: 'suit-S' },
+  { id: 'H', symbol: '♥', name: 'Hearts', colorClass: 'suit-H' },
+  { id: 'D', symbol: '♦', name: 'Diamonds', colorClass: 'suit-D' },
+  { id: 'C', symbol: '♣', name: 'Clubs', colorClass: 'suit-C' }
+];
+
+const BASE_HANDS = {
+  'High Card':       { chips: 5,   mult: 1,  name: 'High Card' },
+  'One Pair':        { chips: 10,  mult: 2,  name: 'One Pair' },
+  'Two Pair':        { chips: 20,  mult: 2,  name: 'Two Pair' },
+  'Three of a Kind': { chips: 30,  mult: 3,  name: 'Three of a Kind' },
+  'Straight':        { chips: 30,  mult: 4,  name: 'Straight' },
+  'Flush':           { chips: 35,  mult: 4,  name: 'Flush' },
+  'Full House':      { chips: 40,  mult: 4,  name: 'Full House' },
+  'Four of a Kind':  { chips: 60,  mult: 7,  name: 'Four of a Kind' },
+  'Straight Flush':  { chips: 100, mult: 8,  name: 'Straight Flush' },
+  'Royal Flush':     { chips: 150, mult: 10, name: 'Royal Flush' }
+};
+
+const JOKER_CATALOG = [
+  { id: 'neon_joker',  name: 'Neon Joker',  icon: '🃏', cost: 4, desc: '+4 Mult setiap hand dimainkan.' },
+  { id: 'chip_stack',  name: 'Chip Hoard',  icon: '💎', cost: 5, desc: '+50 Chips permanen pada semua hand.' },
+  { id: 'scary_face',  name: 'Scary Face',  icon: '👺', cost: 5, desc: '+30 Chips untuk tiap Face Card (J, Q, K).' },
+  { id: 'spade_wrath', name: 'Dark Spades', icon: '♠',  cost: 4, desc: '+3 Mult tiap kartu Spades yang mencetak skor.' },
+  { id: 'heart_lust',  name: 'Pink Hearts', icon: '♥',  cost: 4, desc: '+3 Mult tiap kartu Hearts yang mencetak skor.' },
+  { id: 'dia_greed',   name: 'Gold Dia',    icon: '♦',  cost: 4, desc: '+3 Mult tiap kartu Diamonds yang mencetak skor.' },
+  { id: 'club_glutton',name: 'Acid Clubs',  icon: '♣',  cost: 4, desc: '+3 Mult tiap kartu Clubs yang mencetak skor.' },
+  { id: 'polychrome',  name: 'Poly Chrome', icon: '🌈', cost: 8, desc: '×1.5 Total Mult pada akhir kalkulasi hand!' },
+  { id: 'bullseye',    name: 'Bullseye',    icon: '🎯', cost: 6, desc: '+8 Mult jika hand adalah Pair atau Two Pair.' },
+  { id: 'prism_flush', name: 'Prism Prism', icon: '🔮', cost: 7, desc: '×2.0 Mult jika hand adalah Flush.' },
+  { id: 'high_roller', name: 'High Roller', icon: '🎲', cost: 6, desc: '+80 Chips pada setiap hand.' },
+  { id: 'baron',       name: 'The Baron',   icon: '👑', cost: 7, desc: '+10 Mult untuk tiap King (K) yang dimainkan.' },
+  { id: 'overclock',   name: 'Overclock',   icon: '⚡', cost: 7, desc: '+1 Tangan (Hand) ekstra di setiap ronde.' },
+  { id: 'recycler',    name: 'Recycler',    icon: '🗑', cost: 6, desc: '+1 Discard ekstra di setiap ronde.' },
+  { id: 'gold_ingot',  name: 'Gold Ingot',  icon: '💰', cost: 5, desc: 'Hasilkan bonus bunga +$4 cash tiap menang blind.' }
+];
+
+const PLANET_CATALOG = [
+  { id: 'pl_pair',   targetHand: 'One Pair',        name: 'Mercury', icon: '🪐', cost: 3, desc: '+15 Chips & +1 Mult untuk One Pair.' },
+  { id: 'pl_twopair',targetHand: 'Two Pair',        name: 'Uranus',  icon: '🪐', cost: 3, desc: '+20 Chips & +1 Mult untuk Two Pair.' },
+  { id: 'pl_three',  targetHand: 'Three of a Kind', name: 'Venus',   icon: '🪐', cost: 3, desc: '+25 Chips & +2 Mult untuk Three of a Kind.' },
+  { id: 'pl_flush',  targetHand: 'Flush',           name: 'Jupiter', icon: '🪐', cost: 4, desc: '+30 Chips & +2 Mult untuk Flush.' },
+  { id: 'pl_straight',targetHand: 'Straight',       name: 'Saturn',  icon: '🪐', cost: 4, desc: '+30 Chips & +2 Mult untuk Straight.' },
+  { id: 'pl_house',  targetHand: 'Full House',      name: 'Earth',   icon: '🪐', cost: 4, desc: '+35 Chips & +2 Mult untuk Full House.' }
+];
+
+/* =========================================================================
+   GAME STATE & ENGINE
+   ========================================================================= */
+const HS_KEY = 'neondeck_hs';
+
+const State = {
+  ante: 1,
+  blindIndex: 0, // 0: Small, 1: Big, 2: Boss
+  blindTargets: [
+    [300, 450, 600],          // Ante 1
+    [800, 1200, 1800],        // Ante 2
+    [2400, 3600, 5200],       // Ante 3
+    [7000, 10500, 16000],     // Ante 4
+    [20000, 30000, 48000],    // Ante 5
+    [60000, 95000, 150000],   // Ante 6
+    [180000, 280000, 450000], // Ante 7
+    [550000, 850000, 1300000] // Ante 8
+  ],
+  bossDebuffs: [
+    'Semua kartu Clubs tidak menghasilkan Chips',
+    'Hanya 1 Discard diperbolehkan di ronde ini!',
+    'Target skor dinaikkan +20%'
+  ],
+  currentScore: 0,
+  targetScore: 300,
+  cash: 8,
+  handsLeft: 4,
+  maxHands: 4,
+  discardsLeft: 3,
+  maxDiscards: 3,
+  deck: [],
+  hand: [],
+  selectedCardIds: [],
+  jokers: [],
+  handLevels: {}, // Hand name -> { bonusChips, bonusMult }
+  highestHandScore: 0,
+  totalHandsPlayed: 0,
+  isEvaluating: false
+};
+
+// Clone base hands for upgrade progression
+function initHandLevels() {
+  State.handLevels = {};
+  for (const k in BASE_HANDS) {
+    State.handLevels[k] = { bonusChips: 0, bonusMult: 0 };
+  }
+}
+
+// Generate standard 52 deck
+function createDeck() {
+  const d = [];
+  let id = 1;
+  for (const s of SUITS) {
+    for (let r = 2; r <= 14; r++) {
+      let label = '' + r;
+      if (r === 11) label = 'J';
+      else if (r === 12) label = 'Q';
+      else if (r === 13) label = 'K';
+      else if (r === 14) label = 'A';
+      d.push({ id: id++, rank: r, suit: s.id, symbol: s.symbol, label: label, colorClass: s.colorClass });
+    }
+  }
+  // Shuffle
+  for (let i = d.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [d[i], d[j]] = [d[j], d[i]];
+  }
+  return d;
+}
+
+// Evaluate poker hand
+function evaluateCards(cards) {
+  if (!cards || cards.length === 0) {
+    return { name: 'High Card', scoringCards: [], baseChips: 5, baseMult: 1 };
+  }
+  const sorted = [...cards].sort((a,b) => b.rank - a.rank);
+  const ranks = sorted.map(c => c.rank);
+  const suits = sorted.map(c => c.suit);
+
+  const rankCounts = {};
+  for (const r of ranks) rankCounts[r] = (rankCounts[r] || 0) + 1;
+  const counts = Object.entries(rankCounts).map(([r, c]) => ({ rank: Number(r), count: c }))
+    .sort((a,b) => b.count - a.count || b.rank - a.rank);
+
+  const isFlush = cards.length >= 5 && suits.every(s => s === suits[0]);
+
+  let isStraight = false;
+  let straightHigh = 0;
+  if (cards.length >= 5) {
+    const uniqueRanks = [...new Set(ranks)].sort((a,b) => b - a);
+    if (uniqueRanks.length >= 5) {
+      for (let i = 0; i <= uniqueRanks.length - 5; i++) {
+        if (uniqueRanks[i] - uniqueRanks[i+4] === 4) {
+          isStraight = true;
+          straightHigh = uniqueRanks[i];
+          break;
+        }
+      }
+      if (!isStraight && uniqueRanks.includes(14) && uniqueRanks.includes(2) && uniqueRanks.includes(3) && uniqueRanks.includes(4) && uniqueRanks.includes(5)) {
+        isStraight = true;
+        straightHigh = 5;
+      }
+    }
+  }
+
+  let handType = 'High Card';
+  let scoringCards = [sorted[0]];
+
+  if (isFlush && isStraight) {
+    handType = straightHigh === 14 ? 'Royal Flush' : 'Straight Flush';
+    scoringCards = sorted;
+  } else if (counts[0].count === 4) {
+    handType = 'Four of a Kind';
+    scoringCards = sorted.filter(c => c.rank === counts[0].rank);
+  } else if (counts[0].count === 3 && counts[1] && counts[1].count >= 2) {
+    handType = 'Full House';
+    scoringCards = sorted.filter(c => c.rank === counts[0].rank || c.rank === counts[1].rank);
+  } else if (isFlush) {
+    handType = 'Flush';
+    scoringCards = sorted;
+  } else if (isStraight) {
+    handType = 'Straight';
+    scoringCards = sorted;
+  } else if (counts[0].count === 3) {
+    handType = 'Three of a Kind';
+    scoringCards = sorted.filter(c => c.rank === counts[0].rank);
+  } else if (counts[0].count === 2 && counts[1] && counts[1].count === 2) {
+    handType = 'Two Pair';
+    scoringCards = sorted.filter(c => c.rank === counts[0].rank || c.rank === counts[1].rank);
+  } else if (counts[0].count === 2) {
+    handType = 'One Pair';
+    scoringCards = sorted.filter(c => c.rank === counts[0].rank);
+  }
+
+  const base = BASE_HANDS[handType];
+  const up = State.handLevels[handType] || { bonusChips: 0, bonusMult: 0 };
+
+  return {
+    name: handType,
+    scoringCards: scoringCards,
+    baseChips: base.chips + up.bonusChips,
+    baseMult: base.mult + up.bonusMult
+  };
+}
+
+/* =========================================================================
+   UI RENDERING & INTERACTION
+   ========================================================================= */
+const dom = {
+  anteBadge: document.getElementById('anteBadge'),
+  blindTitle: document.getElementById('blindTitle'),
+  blindDesc: document.getElementById('blindDesc'),
+  targetScore: document.getElementById('targetScore'),
+  currentScore: document.getElementById('currentScore'),
+  progressFill: document.getElementById('progressFill'),
+  jokerSlots: document.getElementById('jokerSlots'),
+  jokerCount: document.getElementById('jokerCount'),
+  handName: document.getElementById('handName'),
+  calcChips: document.getElementById('calcChips'),
+  calcMult: document.getElementById('calcMult'),
+  calcTotal: document.getElementById('calcTotal'),
+  cardsContainer: document.getElementById('cardsContainer'),
+  handsLeft: document.getElementById('handsLeft'),
+  discardsLeft: document.getElementById('discardsLeft'),
+  cashVal: document.getElementById('cashVal'),
+  playBtn: document.getElementById('playBtn'),
+  discardBtn: document.getElementById('discardBtn'),
+  sortRankBtn: document.getElementById('sortRankBtn'),
+  sortSuitBtn: document.getElementById('sortSuitBtn'),
+  shopModal: document.getElementById('shopModal'),
+  shopCash: document.getElementById('shopCash'),
+  shopGrid: document.getElementById('shopGrid'),
+  rerollBtn: document.getElementById('rerollBtn'),
+  nextBlindBtn: document.getElementById('nextBlindBtn'),
+  endModal: document.getElementById('endModal'),
+  endTitle: document.getElementById('endTitle'),
+  endDesc: document.getElementById('endDesc'),
+  resAnte: document.getElementById('resAnte'),
+  resBestHand: document.getElementById('resBestHand'),
+  resScore: document.getElementById('resScore'),
+  resRecord: document.getElementById('resRecord'),
+  shareBtn: document.getElementById('shareBtn'),
+  restartBtn: document.getElementById('restartBtn'),
+  soundBtn: document.getElementById('soundBtn')
+};
+
+// Sound toggle
+dom.soundBtn.addEventListener('click', () => {
+  AudioEngine.enabled = !AudioEngine.enabled;
+  dom.soundBtn.textContent = AudioEngine.enabled ? '🔊' : '🔇';
+});
+
+// Render Jokers
+function renderJokers() {
+  dom.jokerCount.textContent = State.jokers.length;
+  dom.jokerSlots.innerHTML = '';
+  for (let i = 0; i < 5; i++) {
+    const slot = document.createElement('div');
+    if (i < State.jokers.length) {
+      const j = State.jokers[i];
+      slot.className = 'joker-slot active';
+      slot.id = 'joker-' + i;
+      slot.innerHTML = `
+        <div class="j-icon">${j.icon}</div>
+        <div class="j-name">${j.name}</div>
+        <div class="j-desc">Jual $${Math.max(1, Math.floor(j.cost / 2))}</div>
+      `;
+      slot.title = `${j.name}: ${j.desc} (Klik untuk jual)`;
+      slot.onclick = () => sellJoker(i);
+    } else {
+      slot.className = 'joker-slot empty';
+      slot.textContent = 'EMPTY';
+    }
+    dom.jokerSlots.appendChild(slot);
+  }
+}
+
+function sellJoker(index) {
+  if (State.isEvaluating) return;
+  const j = State.jokers[index];
+  const refund = Math.max(1, Math.floor(j.cost / 2));
+  State.cash += refund;
+  State.jokers.splice(index, 1);
+  AudioEngine.cash();
+  renderJokers();
+  updateHUD();
+  updateSelectedHandPreview();
+}
+
+// Render Player Hand
+function renderCards() {
+  dom.cardsContainer.innerHTML = '';
+  State.hand.forEach(card => {
+    const cardEl = document.createElement('div');
+    const isSel = State.selectedCardIds.includes(card.id);
+    cardEl.className = `playing-card ${card.colorClass} ${isSel ? 'selected' : ''}`;
+    cardEl.dataset.id = card.id;
+
+    cardEl.innerHTML = `
+      <div class="card-top">
+        <span class="card-val">${card.label}</span>
+        <span class="card-suit-sm">${card.symbol}</span>
+      </div>
+      <div class="card-center">${card.symbol}</div>
+      <div class="card-bot">
+        <span class="card-val">${card.label}</span>
+        <span class="card-suit-sm">${card.symbol}</span>
+      </div>
+    `;
+
+    cardEl.onclick = () => toggleSelectCard(card.id);
+    dom.cardsContainer.appendChild(cardEl);
+  });
+}
+
+function toggleSelectCard(id) {
+  if (State.isEvaluating) return;
+  const idx = State.selectedCardIds.indexOf(id);
+  if (idx >= 0) {
+    State.selectedCardIds.splice(idx, 1);
+    AudioEngine.unselect();
+  } else {
+    if (State.selectedCardIds.length >= 5) return;
+    State.selectedCardIds.push(id);
+    AudioEngine.select();
+  }
+  renderCards();
+  updateSelectedHandPreview();
+}
+
+// Update HUD & calculations
+function updateSelectedHandPreview() {
+  const selectedCards = State.hand.filter(c => State.selectedCardIds.includes(c.id));
+  dom.playBtn.textContent = `PLAY HAND (${selectedCards.length})`;
+  dom.playBtn.disabled = selectedCards.length === 0 || State.handsLeft <= 0 || State.isEvaluating;
+  dom.discardBtn.disabled = selectedCards.length === 0 || State.discardsLeft <= 0 || State.isEvaluating;
+
+  if (selectedCards.length === 0) {
+    dom.handName.textContent = 'PILIH HINGGA 5 KARTU';
+    dom.calcChips.textContent = '0 CHIPS';
+    dom.calcMult.textContent = '1 MULT';
+    dom.calcTotal.textContent = '0 PTS';
+    return;
+  }
+
+  const evalRes = evaluateCards(selectedCards);
+  dom.handName.textContent = evalRes.name.toUpperCase();
+
+  // Calculate live preview including card values & active Jokers
+  let chips = evalRes.baseChips;
+  let mult = evalRes.baseMult;
+
+  // Add individual card chip values
+  evalRes.scoringCards.forEach(c => {
+    let cardChips = c.rank <= 10 ? c.rank : (c.rank === 14 ? 11 : 10);
+    chips += cardChips;
+  });
+
+  // Check Jokers in preview
+  State.jokers.forEach(j => {
+    if (j.id === 'neon_joker') mult += 4;
+    if (j.id === 'chip_stack') chips += 50;
+    if (j.id === 'high_roller') chips += 80;
+    if (j.id === 'bullseye' && (evalRes.name === 'One Pair' || evalRes.name === 'Two Pair')) mult += 8;
+  });
+
+  const total = chips * mult;
+  dom.calcChips.textContent = chips + ' CHIPS';
+  dom.calcMult.textContent = mult + ' MULT';
+  dom.calcTotal.textContent = total.toLocaleString() + ' PTS';
+}
+
+function updateHUD() {
+  const blindNames = ['SMALL BLIND', 'BIG BLIND', 'BOSS BLIND'];
+  const anteIndex = Math.min(State.ante - 1, State.blindTargets.length - 1);
+  const target = State.blindTargets[anteIndex][State.blindIndex];
+  State.targetScore = target;
+
+  dom.anteBadge.textContent = `ANTE ${State.ante}/8 · ${blindNames[State.blindIndex]}`;
+  dom.blindTitle.textContent = State.blindIndex === 2 ? '💀 ' + blindNames[State.blindIndex] : '🔵 ' + blindNames[State.blindIndex];
+  dom.blindDesc.textContent = State.blindIndex === 2 ? 'Boss modifier aktif: ' + State.bossDebuffs[(State.ante - 1) % State.bossDebuffs.length] : 'Capai target skor chips × mult untuk lolos';
+
+  dom.targetScore.textContent = target.toLocaleString();
+  dom.currentScore.textContent = State.currentScore.toLocaleString();
+
+  const pct = Math.min(100, Math.floor((State.currentScore / target) * 100));
+  dom.progressFill.style.width = pct + '%';
+
+  dom.handsLeft.textContent = State.handsLeft;
+  dom.discardsLeft.textContent = State.discardsLeft;
+  dom.cashVal.textContent = State.cash;
+}
+
+// Discard Selected Cards
+dom.discardBtn.addEventListener('click', () => {
+  if (State.isEvaluating || State.discardsLeft <= 0 || State.selectedCardIds.length === 0) return;
+  AudioEngine.discard();
+  State.discardsLeft--;
+
+  // Remove discarded cards
+  State.hand = State.hand.filter(c => !State.selectedCardIds.includes(c.id));
+  State.selectedCardIds = [];
+
+  // Draw replacement cards up to 8
+  refillHand();
+  renderCards();
+  updateHUD();
+  updateSelectedHandPreview();
+});
+
+// Sort Hand
+dom.sortRankBtn.addEventListener('click', () => {
+  State.hand.sort((a,b) => b.rank - a.rank);
+  renderCards();
+});
+dom.sortSuitBtn.addEventListener('click', () => {
+  State.hand.sort((a,b) => a.suit.localeCompare(b.suit) || b.rank - a.rank);
+  renderCards();
+});
+
+function refillHand() {
+  while (State.hand.length < 8 && State.deck.length > 0) {
+    State.hand.push(State.deck.pop());
+    AudioEngine.deal();
+  }
+}
+
+// PLAY HAND: Animated scoring sequence
+dom.playBtn.addEventListener('click', async () => {
+  if (State.isEvaluating || State.handsLeft <= 0 || State.selectedCardIds.length === 0) return;
+
+  State.isEvaluating = true;
+  dom.playBtn.disabled = true;
+  dom.discardBtn.disabled = true;
+  State.handsLeft--;
+  State.totalHandsPlayed++;
+
+  const playedCards = State.hand.filter(c => State.selectedCardIds.includes(c.id));
+  const evalRes = evaluateCards(playedCards);
+
+  // Step 1: Initialize base chips and mult
+  let chips = evalRes.baseChips;
+  let mult = evalRes.baseMult;
+
+  dom.calcChips.textContent = chips + ' CHIPS';
+  dom.calcMult.textContent = mult + ' MULT';
+  dom.calcTotal.textContent = (chips * mult).toLocaleString() + ' PTS';
+  AudioEngine.tick(0);
+
+  // Mark scoring cards visually
+  const cardElements = Array.from(dom.cardsContainer.querySelectorAll('.playing-card'));
+  evalRes.scoringCards.forEach(sc => {
+    const el = cardElements.find(e => Number(e.dataset.id) === sc.id);
+    if (el) el.classList.add('scoring');
+  });
+
+  await new Promise(r => setTimeout(r, 400));
+
+  // Step 2: Trigger scoring cards one by one
+  for (let i = 0; i < evalRes.scoringCards.length; i++) {
+    const card = evalRes.scoringCards[i];
+    let cardChips = card.rank <= 10 ? card.rank : (card.rank === 14 ? 11 : 10);
+
+    // Boss debuff check
+    if (State.blindIndex === 2 && State.ante % 3 === 1 && card.suit === 'C') {
+      cardChips = 0; // Debuffed
+    }
+
+    chips += cardChips;
+
+    // Trigger suit jokers
+    State.jokers.forEach(j => {
+      if (j.id === 'spade_wrath' && card.suit === 'S') mult += 3;
+      if (j.id === 'heart_lust' && card.suit === 'H') mult += 3;
+      if (j.id === 'dia_greed' && card.suit === 'D') mult += 3;
+      if (j.id === 'club_glutton' && card.suit === 'C') mult += 3;
+      if (j.id === 'scary_face' && card.rank >= 11 && card.rank <= 13) chips += 30;
+      if (j.id === 'baron' && card.rank === 13) mult += 10;
+    });
+
+    dom.calcChips.textContent = chips + ' CHIPS';
+    dom.calcMult.textContent = mult + ' MULT';
+    dom.calcChips.classList.add('bump');
+    setTimeout(() => dom.calcChips.classList.remove('bump'), 150);
+    AudioEngine.tick(i + 1);
+    await new Promise(r => setTimeout(r, 240));
+  }
+
+  // Step 3: Trigger Jokers
+  for (let jIdx = 0; jIdx < State.jokers.length; jIdx++) {
+    const j = State.jokers[jIdx];
+    let triggered = false;
+
+    if (j.id === 'neon_joker') { mult += 4; triggered = true; }
+    if (j.id === 'chip_stack') { chips += 50; triggered = true; }
+    if (j.id === 'high_roller') { chips += 80; triggered = true; }
+    if (j.id === 'bullseye' && (evalRes.name === 'One Pair' || evalRes.name === 'Two Pair')) { mult += 8; triggered = true; }
+    if (j.id === 'prism_flush' && evalRes.name === 'Flush') { mult = Math.floor(mult * 2); triggered = true; }
+    if (j.id === 'polychrome') { mult = Math.floor(mult * 1.5); triggered = true; }
+
+    if (triggered) {
+      const slotEl = document.getElementById('joker-' + jIdx);
+      if (slotEl) slotEl.classList.add('triggering');
+      dom.calcChips.textContent = chips + ' CHIPS';
+      dom.calcMult.textContent = mult + ' MULT';
+      dom.calcMult.classList.add('bump');
+      AudioEngine.multBump();
+      await new Promise(r => setTimeout(r, 350));
+      if (slotEl) slotEl.classList.remove('triggering');
+    }
+  }
+
+  // Step 4: Final Score Calculation
+  const handTotal = chips * mult;
+  dom.calcTotal.textContent = handTotal.toLocaleString() + ' PTS';
+  if (handTotal > State.highestHandScore) State.highestHandScore = handTotal;
+
+  // Add to Round Score with bump
+  State.currentScore += handTotal;
+  updateHUD();
+  await new Promise(r => setTimeout(r, 450));
+
+  // Discard played cards and refill hand
+  State.hand = State.hand.filter(c => !State.selectedCardIds.includes(c.id));
+  State.selectedCardIds = [];
+  refillHand();
+  renderCards();
+  updateSelectedHandPreview();
+  State.isEvaluating = false;
+
+  // Check Round Condition
+  checkRoundState();
+});
+
+function checkRoundState() {
+  if (State.currentScore >= State.targetScore) {
+    // BLIND CLEARED!
+    AudioEngine.winRound();
+    const bonusCash = 3 + (State.handsLeft * 1);
+    let interest = 0;
+    State.jokers.forEach(j => {
+      if (j.id === 'gold_ingot') interest += 4;
+    });
+    State.cash += bonusCash + interest;
+
+    setTimeout(() => {
+      openShop();
+    }, 600);
+  } else if (State.handsLeft <= 0) {
+    // GAME OVER
+    AudioEngine.gameOver();
+    setTimeout(() => {
+      showEndGame(false);
+    }, 600);
+  }
+}
+
+/* =========================================================================
+   CASINO SHOP SYSTEM
+   ========================================================================= */
+let currentShopItems = [];
+
+function openShop() {
+  dom.shopCash.textContent = State.cash;
+  generateShopItems();
+  dom.shopModal.classList.add('visible');
+}
+
+function generateShopItems() {
+  currentShopItems = [];
+  // 2 random Jokers
+  const shuffledJokers = [...JOKER_CATALOG].sort(() => 0.5 - Math.random());
+  for (let i = 0; i < 2; i++) {
+    currentShopItems.push({ type: 'joker', data: shuffledJokers[i] });
+  }
+  // 1 random Planet upgrade
+  const shuffledPlanets = [...PLANET_CATALOG].sort(() => 0.5 - Math.random());
+  currentShopItems.push({ type: 'planet', data: shuffledPlanets[0] });
+
+  renderShop();
+}
+
+function renderShop() {
+  dom.shopGrid.innerHTML = '';
+  currentShopItems.forEach((item, idx) => {
+    const d = item.data;
+    const card = document.createElement('div');
+    card.className = 'shop-item';
+    card.innerHTML = `
+      <div class="item-icon">${d.icon}</div>
+      <div class="item-name">${d.name}</div>
+      <div class="item-desc">${d.desc}</div>
+      <div class="item-price">$${d.cost}</div>
+    `;
+    card.onclick = () => buyShopItem(idx);
+    dom.shopGrid.appendChild(card);
+  });
+}
+
+function buyShopItem(idx) {
+  const item = currentShopItems[idx];
+  if (!item) return;
+
+  if (State.cash < item.data.cost) {
+    alert('Uang Anda tidak cukup! ($' + State.cash + ' / $' + item.data.cost + ')');
+    return;
+  }
+
+  if (item.type === 'joker') {
+    if (State.jokers.length >= 5) {
+      alert('Slot Joker penuh (5/5)! Jual salah satu Joker untuk beli.');
+      return;
+    }
+    State.cash -= item.data.cost;
+    State.jokers.push(item.data);
+    if (item.data.id === 'overclock') State.maxHands++;
+    if (item.data.id === 'recycler') State.maxDiscards++;
+  } else if (item.type === 'planet') {
+    State.cash -= item.data.cost;
+    const p = item.data;
+    const hand = State.handLevels[p.targetHand];
+    if (hand) {
+      hand.bonusChips += 20;
+      hand.bonusMult += 1;
+    }
+  }
+
+  AudioEngine.cash();
+  currentShopItems.splice(idx, 1);
+  dom.shopCash.textContent = State.cash;
+  renderShop();
+  renderJokers();
+  updateHUD();
+}
+
+// Reroll Shop
+dom.rerollBtn.addEventListener('click', () => {
+  if (State.cash < 5) {
+    alert('Perlu $5 untuk reroll toko!');
+    return;
+  }
+  State.cash -= 5;
+  dom.shopCash.textContent = State.cash;
+  AudioEngine.cash();
+  generateShopItems();
+});
+
+// Proceed to Next Blind
+dom.nextBlindBtn.addEventListener('click', () => {
+  dom.shopModal.classList.remove('visible');
+
+  State.blindIndex++;
+  if (State.blindIndex > 2) {
+    State.blindIndex = 0;
+    State.ante++;
+    if (State.ante > 8) {
+      // VICTORY!
+      showEndGame(true);
+      return;
+    }
+  }
+
+  startBlind();
+});
+
+function startBlind() {
+  State.currentScore = 0;
+  State.handsLeft = State.maxHands;
+  State.discardsLeft = State.maxDiscards;
+
+  // Boss debuff: 1 discard only
+  if (State.blindIndex === 2 && State.ante % 3 === 2) {
+    State.discardsLeft = 1;
+  }
+
+  State.deck = createDeck();
+  State.hand = [];
+  State.selectedCardIds = [];
+  refillHand();
+  renderCards();
+  updateHUD();
+  updateSelectedHandPreview();
+}
+
+/* =========================================================================
+   END GAME & HIGH SCORE PERSISTENCE
+   ========================================================================= */
+function showEndGame(isVictory) {
+  dom.endModal.classList.add('visible');
+  dom.endTitle.textContent = isVictory ? '🏆 ANTE 8 DEFEATED! VICTORY!' : '💀 GAME OVER';
+  dom.endTitle.style.color = isVictory ? 'var(--gold)' : 'var(--red)';
+  dom.endDesc.textContent = isVictory 
+    ? 'Luar biasa! Anda berhasil menaklukkan Boss Blind Ante 8 dan membongkar brankas kasino!'
+    : 'Tangan Anda habis sebelum mencapai target skor blind. Jangan menyerah, bangun sinergi Joker yang lebih mematikan!';
+
+  dom.resAnte.textContent = 'ANTE ' + State.ante + ' (' + (State.blindIndex + 1) + '/3)';
+  dom.resBestHand.textContent = State.highestHandScore.toLocaleString() + ' PTS';
+  dom.resScore.textContent = State.currentScore.toLocaleString();
+
+  // Save High Score
+  const prevHs = parseInt(localStorage.getItem(HS_KEY) || '0', 10);
+  const finalScore = State.highestHandScore;
+  if (finalScore > prevHs) {
+    localStorage.setItem(HS_KEY, finalScore.toString());
+  }
+  const displayBest = Math.max(prevHs, finalScore);
+  dom.resRecord.textContent = displayBest.toLocaleString() + ' PTS';
+}
+
+// WhatsApp Brag
+dom.shareBtn.addEventListener('click', () => {
+  const text = `🃏 NEON DECK (Pocket Balatro) Record!
+🏆 Ante Reached: Ante ${State.ante}
+💥 Best Hand Score: ${State.highestHandScore.toLocaleString()} Pts
+🃏 Total Jokers: ${State.jokers.length}
+
+Mainkan gratis tanpa install:
+https://lwn2210.github.io/mini-arcade/deck/`;
+
+  if (navigator.share) {
+    navigator.share({ title: 'Neon Deck Arcade', text: text }).catch(() => {});
+  } else {
+    window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
+  }
+});
+
+// Restart Game
+dom.restartBtn.addEventListener('click', () => {
+  dom.endModal.classList.remove('visible');
+  initGame();
+});
+
+function initGame() {
+  State.ante = 1;
+  State.blindIndex = 0;
+  State.currentScore = 0;
+  State.cash = 8;
+  State.maxHands = 4;
+  State.maxDiscards = 3;
+  State.handsLeft = 4;
+  State.discardsLeft = 3;
+  State.jokers = [];
+  State.highestHandScore = 0;
+  State.totalHandsPlayed = 0;
+  initHandLevels();
+  renderJokers();
+  startBlind();
+}
+
+// Start
+initGame();
+</script>
+</body>
+</html>
