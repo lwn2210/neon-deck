@@ -1217,6 +1217,43 @@ function toggleSelectCard(id) {
   updateSelectedHandPreview();
 }
 
+// One scoring trace powers both the selection preview and animated Play.
+// Keep card effects first, then apply hand jokers in inventory order.
+function calculateHandScore(evalRes) {
+  let chips = evalRes.baseChips;
+  let mult = evalRes.baseMult;
+  const cardSteps = [];
+  const jokerSteps = [];
+
+  for (const card of evalRes.scoringCards) {
+    let cardChips = card.rank <= 10 ? card.rank : (card.rank === 14 ? 11 : 10);
+    if (State.blindIndex === 2 && State.ante % 3 === 1 && card.suit === 'C') cardChips = 0;
+    chips += cardChips;
+    for (const j of State.jokers) {
+      if (j.id === 'spade_wrath' && card.suit === 'S') mult += 3;
+      if (j.id === 'heart_lust' && card.suit === 'H') mult += 3;
+      if (j.id === 'dia_greed' && card.suit === 'D') mult += 3;
+      if (j.id === 'club_glutton' && card.suit === 'C') mult += 3;
+      if (j.id === 'scary_face' && card.rank >= 11 && card.rank <= 13) chips += 30;
+      if (j.id === 'baron' && card.rank === 13) mult += 10;
+    }
+    cardSteps.push({ chips, mult });
+  }
+
+  for (const j of State.jokers) {
+    let triggered = false;
+    if (j.id === 'neon_joker') { mult += 4; triggered = true; }
+    if (j.id === 'chip_stack') { chips += 50; triggered = true; }
+    if (j.id === 'high_roller') { chips += 80; triggered = true; }
+    if (j.id === 'bullseye' && (evalRes.name === 'One Pair' || evalRes.name === 'Two Pair')) { mult += 8; triggered = true; }
+    if (j.id === 'prism_flush' && evalRes.name === 'Flush') { mult = Math.floor(mult * 2); triggered = true; }
+    if (j.id === 'polychrome') { mult = Math.floor(mult * 1.5); triggered = true; }
+    jokerSteps.push({ chips, mult, triggered });
+  }
+
+  return { chips, mult, total: chips * mult, cardSteps, jokerSteps };
+}
+
 // Update HUD & calculations
 function updateSelectedHandPreview() {
   const selectedCards = State.hand.filter(c => State.selectedCardIds.includes(c.id));
@@ -1235,25 +1272,7 @@ function updateSelectedHandPreview() {
   const evalRes = evaluateCards(selectedCards);
   dom.handName.textContent = evalRes.name.toUpperCase();
 
-  // Calculate live preview including card values & active Jokers
-  let chips = evalRes.baseChips;
-  let mult = evalRes.baseMult;
-
-  // Add individual card chip values
-  evalRes.scoringCards.forEach(c => {
-    let cardChips = c.rank <= 10 ? c.rank : (c.rank === 14 ? 11 : 10);
-    chips += cardChips;
-  });
-
-  // Check Jokers in preview
-  State.jokers.forEach(j => {
-    if (j.id === 'neon_joker') mult += 4;
-    if (j.id === 'chip_stack') chips += 50;
-    if (j.id === 'high_roller') chips += 80;
-    if (j.id === 'bullseye' && (evalRes.name === 'One Pair' || evalRes.name === 'Two Pair')) mult += 8;
-  });
-
-  const total = chips * mult;
+  const { chips, mult, total } = calculateHandScore(evalRes);
   dom.calcChips.textContent = chips + ' CHIPS';
   dom.calcMult.textContent = mult + ' MULT';
   dom.calcTotal.textContent = total.toLocaleString() + ' PTS';
@@ -1326,6 +1345,7 @@ dom.playBtn.addEventListener('click', async () => {
 
   const playedCards = State.hand.filter(c => State.selectedCardIds.includes(c.id));
   const evalRes = evaluateCards(playedCards);
+  const score = calculateHandScore(evalRes);
 
   // Step 1: Initialize base chips and mult
   let chips = evalRes.baseChips;
@@ -1347,25 +1367,7 @@ dom.playBtn.addEventListener('click', async () => {
 
   // Step 2: Trigger scoring cards one by one
   for (let i = 0; i < evalRes.scoringCards.length; i++) {
-    const card = evalRes.scoringCards[i];
-    let cardChips = card.rank <= 10 ? card.rank : (card.rank === 14 ? 11 : 10);
-
-    // Boss debuff check
-    if (State.blindIndex === 2 && State.ante % 3 === 1 && card.suit === 'C') {
-      cardChips = 0; // Debuffed
-    }
-
-    chips += cardChips;
-
-    // Trigger suit jokers
-    State.jokers.forEach(j => {
-      if (j.id === 'spade_wrath' && card.suit === 'S') mult += 3;
-      if (j.id === 'heart_lust' && card.suit === 'H') mult += 3;
-      if (j.id === 'dia_greed' && card.suit === 'D') mult += 3;
-      if (j.id === 'club_glutton' && card.suit === 'C') mult += 3;
-      if (j.id === 'scary_face' && card.rank >= 11 && card.rank <= 13) chips += 30;
-      if (j.id === 'baron' && card.rank === 13) mult += 10;
-    });
+    ({ chips, mult } = score.cardSteps[i]);
 
     dom.calcChips.textContent = chips + ' CHIPS';
     dom.calcMult.textContent = mult + ' MULT';
@@ -1377,15 +1379,8 @@ dom.playBtn.addEventListener('click', async () => {
 
   // Step 3: Trigger Jokers
   for (let jIdx = 0; jIdx < State.jokers.length; jIdx++) {
-    const j = State.jokers[jIdx];
-    let triggered = false;
-
-    if (j.id === 'neon_joker') { mult += 4; triggered = true; }
-    if (j.id === 'chip_stack') { chips += 50; triggered = true; }
-    if (j.id === 'high_roller') { chips += 80; triggered = true; }
-    if (j.id === 'bullseye' && (evalRes.name === 'One Pair' || evalRes.name === 'Two Pair')) { mult += 8; triggered = true; }
-    if (j.id === 'prism_flush' && evalRes.name === 'Flush') { mult = Math.floor(mult * 2); triggered = true; }
-    if (j.id === 'polychrome') { mult = Math.floor(mult * 1.5); triggered = true; }
+    const { triggered } = score.jokerSteps[jIdx];
+    ({ chips, mult } = score.jokerSteps[jIdx]);
 
     if (triggered) {
       const slotEl = document.getElementById('joker-' + jIdx);
@@ -1400,7 +1395,7 @@ dom.playBtn.addEventListener('click', async () => {
   }
 
   // Step 4: Final Score Calculation
-  const handTotal = chips * mult;
+  const handTotal = score.total;
   dom.calcTotal.textContent = handTotal.toLocaleString() + ' PTS';
   if (handTotal > State.highestHandScore) State.highestHandScore = handTotal;
 
